@@ -1,0 +1,60 @@
+name: "ShellGuard Audit"
+description: "Fail the build on shell-injection call sites: shell=True, os.system/os.popen, string argv, asyncio.create_subprocess_shell."
+author: "Derbaros Eng"
+branding:
+  icon: "shield"
+  color: "green"
+inputs:
+  path:
+    description: "Directory or file to audit (single path)."
+    required: false
+    default: "."
+  version:
+    default: "1.4.0"
+    description: "shellguard release version to install from the GitHub release wheel."
+    required: false
+  wheel-sha256:
+    default: "d0415acbb2327cb2a1ed5dd3bfbaea02bc203b7952dd4f2f1162548125f07c6f"
+    description: "Expected sha256 of the release wheel; install is refused on mismatch."
+    required: false
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.x"
+    - name: Install shellguard release wheel (integrity-verified)
+      shell: bash
+      env:
+        SG_VERSION: ${{ inputs.version }}
+        SG_WHEEL_SHA256: ${{ inputs.wheel-sha256 }}
+      run: |
+        set -euo pipefail
+        wheel="shellguard-${SG_VERSION}-py3-none-any.whl"
+        url="https://github.com/derbaroser-eng/shellguard-lib/releases/download/v${SG_VERSION}/${wheel}"
+        curl -fsSL --retry 3 -o "$wheel" "$url"
+        echo "${SG_WHEEL_SHA256}  ${wheel}" | sha256sum -c -
+        python -m pip install --disable-pip-version-check "./${wheel}"
+    - name: Audit for shell-injection call sites
+      shell: bash
+      env:
+        SG_PATHS: ${{ inputs.path }}
+      run: |
+        case "$SG_PATHS" in
+          -*)
+            echo "::error::ShellGuard path must not start with '-' (option injection)."
+            exit 2
+            ;;
+        esac
+        set +e
+        shellguard audit --json "$SG_PATHS" > shellguard-audit.json
+        code=$?
+        set -e
+        cat shellguard-audit.json
+        if [ "$code" -eq 1 ]; then
+          echo "::error::ShellGuard found shell-injection call sites. See shellguard-audit.json."
+          exit 1
+        elif [ "$code" -ne 0 ]; then
+          echo "::error::ShellGuard audit failed (exit $code)."
+          exit "$code"
+        fi
