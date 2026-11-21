@@ -47,7 +47,7 @@ environment variables, never interpolated into a run block.
 ## The library behind the action
 
 shellguard is also a typed Python library + CLI (`sg run`, `sg quote`,
-`sg audit`, offline HMAC license keys) with 123 green tests:
+`sg audit`, offline HMAC license keys) with 126 green tests:
 https://derbaroser-eng.github.io/shellguard/
 
 MIT licensed. A commercial license for proprietary redistribution is
