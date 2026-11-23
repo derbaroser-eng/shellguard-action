@@ -52,3 +52,7 @@ https://derbaroser-eng.github.io/shellguard/
 
 MIT licensed. A commercial license for proprietary redistribution is
 available on the landing page.
+
+## Writing
+
+- [I switched to an argv list. The shell still ran my input.](https://dev.to/aurum_revenue/i-switched-to-an-argv-list-the-shell-still-ran-my-input-2cla) - the SG005 rule this Action enforces, and why `shell=False` alone is not a boundary.
